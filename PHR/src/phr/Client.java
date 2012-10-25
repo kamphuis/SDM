@@ -1,13 +1,11 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package phr;
 
-import cpabe.*;
+
 import java.io.File;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
+
 /**
  *
  * @author luca
@@ -20,6 +18,7 @@ public class Client {
     private static String pvtk_location;
     private static String dec_location;
     private static String enc_location;
+    private static String input_location;
     
     // definition of the Client
     public Client(String type, String keys_location) throws Exception{
@@ -36,6 +35,7 @@ public class Client {
             this.pvtk_location = keys_location + "pvt_key";
             this.enc_location = keys_location + "enc_file";
             this.dec_location = keys_location + "dec_file";
+            this.input_location = keys_location + "input_file";
         }
         else {
             System.out.println("insert a valid type");
@@ -46,20 +46,41 @@ public class Client {
     
     // send a SQL request to the server
     public void read(String table, List<String> fields, Server s) throws Exception{
-    
-        ArrayList<String> result = new ArrayList<String>();
-    
+        ArrayList<File> result = new ArrayList<File>();
         try{
+            TA.setup(s.getPubkLocation(), this.mk_location);
             result = s.executeSelect(table,fields);
             TA.keygen(pubk_location, pvtk_location, mk_location, table);
-            for(String item : result) {
-                TA.cpabe.dec(pubk_location, pvtk_location, item, dec_location);
+            for(File item : result) {
+                TA.cpabe.dec(pubk_location, pvtk_location, item.getPath(), dec_location);
             }
         }
         catch(Exception e) {}        
     }
+
     
+    /* WORK IN PROGRESS
+    public void write(String table, List<String> fields, List<String> values, Server s) throws Exception{
+        
+        File input = new File(input_location);
+        
+        ArrayList<File> result = new ArrayList<File>();
     
+        String POLICY = ""; //implement tree, challenge/response and policy generation
+        
+        try{
+            TA.setup(this.pubk_location, s.getMkLocation());
+            TA.cpabe.enc(pubk_location, POLICY, input, enc_location);
+            
+            
+            result = s.executeSelect(table,fields);
+            TA.keygen(pubk_location, pvtk_location, mk_location, table);
+            for(File item : result) {
+                TA.cpabe.dec(pubk_location, pvtk_location, item.getPath(), dec_location);
+            }
+        }
+        catch(Exception e) {}        
+    }*/
     
-    
+
 }
