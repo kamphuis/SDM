@@ -2,11 +2,11 @@
 package phr;
 
 import java.io.File;
-import java.util.List;
-import java.util.ArrayList;
 import java.sql.*;
-import java.util.LinkedHashMap;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 /**
  *
  * @author luca
@@ -25,9 +25,9 @@ public class Server {
     private static final String db_pw = "phr1234";
     Connection conn = null;
     LinkedHashMap<String, HashMap<String, String>> readAccessTree = 
-            new LinkedHashMap<String, HashMap<String, String>>();
+            new LinkedHashMap<>();
     LinkedHashMap<String, HashMap<String, String>> writeAccessTree = 
-            new LinkedHashMap<String, HashMap<String, String>>();
+            new LinkedHashMap<>();
     
     public Server(String type, String keys_location){
         this.pubk_location = keys_location + "pub_key";
@@ -35,41 +35,48 @@ public class Server {
         this.pvtk_location = keys_location + "pvt_key";
         this.enc_location = keys_location + "enc_file";
         this.dec_location = keys_location + "dec_file";
-        //addReadPolicy();
     }
     
     public void addReadPolicy(String table, String key, String policy){
-        HashMap<String, String> h = new HashMap<String, String>();
+        HashMap<String, String> h = new HashMap<>();
         h.put(key, policy);
         readAccessTree.put(table, h);
     }
     
     public void addWritePolicy(String table, String key, String policy){
-        HashMap<String, String> h = new HashMap<String, String>();
+        HashMap<String, String> h = new HashMap<>();
         h.put(key, policy);
         writeAccessTree.put(table, h);
     }
     
-    public ArrayList<File> executeSelect(String table, List<String> fields) throws Exception{
-        ArrayList <String> result = new ArrayList<String>();
-        ArrayList <File> enc_result = new ArrayList<File>();
+    public String getReadPolicy(String table, String key) {
+        return readAccessTree.get(table).get(key);
+    }
+    
+    public String getWritePolicy(String table, String key) {
+        return writeAccessTree.get(table).get(key);
+    }
+    
+    public ArrayList<File> executeSelect(String table, List<String> fields, String info) throws Exception{
+        ArrayList<String> result = new ArrayList<>();
+        ArrayList<File> enc_result = new ArrayList<>();
         String rows = "";
         for(String item : fields) {
-            rows.concat(" " + item);
+            rows = rows.concat(" " + item);
         }
         try {
             Class.forName(db_driver).newInstance();
             conn = DriverManager.getConnection(db_url+db_name,db_user,db_pw);
             Statement stat = conn.createStatement();
-            ResultSet rs = stat.executeQuery("SELECT"+rows+"FROM "+table);
+            ResultSet rs = stat.executeQuery("SELECT "+rows+"FROM "+table);
             for (int i=0; rs.next(); i++) {
                 result.add( rs.getString(i) );
             }
             
-            String POLICY = ""; //implement tree and policy generation
+            String policy = getReadPolicy(table, info);
             
             for(int i = 0; i<result.size();i++){
-                TA.cpabe.enc(pubk_location, POLICY, result.get(i), enc_location+i);
+                TA.cpabe.enc(pubk_location, policy, result.get(i), enc_location+i);
                 enc_result.add(new File(enc_location+i));
             }
             
