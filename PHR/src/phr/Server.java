@@ -59,7 +59,7 @@ public class Server {
         return writeAccessTree.get(table).get(key);
     }
     
-    public String executeSelect(String table, List<String> fields, String id) throws Exception{
+    public String executeSelect(String table, List<String> fields, String id, String clause) throws Exception{
         ArrayList<String> result = new ArrayList<>();
         FileWriter input_file = new FileWriter(input_location);
         BufferedWriter out = new BufferedWriter(input_file);
@@ -71,7 +71,9 @@ public class Server {
             Class.forName(db_driver).newInstance();
             conn = DriverManager.getConnection(db_url+db_name,db_user,db_pw);
             Statement stat = conn.createStatement();
-            ResultSet rs = stat.executeQuery("SELECT "+rows+"FROM "+table);
+			String query = "SELECT "+rows+" FROM "+table;
+			if(!clause.equals("")) { query = query+" WHERE "+clause; }
+            ResultSet rs = stat.executeQuery(query);
             for (int i=0; rs.next(); i++) {
                 result.add( rs.getString(i) );
             }
@@ -93,6 +95,48 @@ public class Server {
         conn.close();
         return enc_location;
     }
+	
+	public String executeInsert(Client client, String table, List<String> fields, String id) {
+		String policy = getWritePolicy(table, id);
+		String random = ""+Math.random();
+		FileWriter input_file = new FileWriter(input_location);
+        BufferedWriter out = new BufferedWriter(input_file);
+		try { out.write(random); out.newLine(); out.close(); }
+		catch(IOException e) { System.out.println("Something broke"); }
+		TA.cpabe.enc(pubk_location, policy, input_location, enc_location);
+		String response_loc = client.authWrite(enc_location);
+		
+		FileReader fr = new FileReader(response_loc);
+		BufferedReader br = new BufferedReader(fr);
+		boolean match = false;
+		try { match = random.equals(br.readLine()); br.close();}
+		catch(IOException e) { System.out.println("Something broke"); }
+		if(match) { //dostuff 
+			String values = "(";
+			for(String item : fields) {
+				values = values.concat("'"+item+"', ");
+			}
+			values = values.substring(0,values.length()-3);
+			values = values + ")";
+			String returnstring = "";
+			try {
+				Class.forName(db_driver).newInstance();
+				conn = DriverManager.getConnection(db_url+db_name,db_user,db_pw);
+				Statement stat = conn.createStatement();
+				String query = "INSERT INTO "+table+" VALUES "+values;
+				int num_rows_affected = stat.executeUpdate(query);
+				conn.close();
+				returnstring = "Insert statement executed. Number of rows affected = "+num_rows_affected;
+            }
+			catch(Exception e) {
+				returnstring = "Something went wrong executing insert statement";
+			}
+			return returnstring;
+		}
+		else { 
+			return "Authentication failed!";
+		}
+	}
     
     
     public String getPubkLocation(){
