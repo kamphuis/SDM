@@ -91,6 +91,10 @@ public class Server {
         conn.close();
         return enc_location;
     }
+	
+	public ArrayList<File> executeInsert() {
+	
+	}
     
     public String getPubkLocation(){
         return this.pubk_location;
