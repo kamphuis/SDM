@@ -1,7 +1,7 @@
 
 package phr;
 
-import java.io.File;
+import java.io.*;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,6 +18,7 @@ public class Server {
     private String pvtk_location;
     private String dec_location;
     private String enc_location;
+    private String input_location;
     private static final String db_url = "jdbc:mysql://kamphuis.student.utwente.nl:3306";
     private static final String db_name = "phr";
     private static final String db_driver = "com.mysql.jdbc.Driver";
@@ -35,6 +36,7 @@ public class Server {
         this.pvtk_location = keys_location + "pvt_key";
         this.enc_location = keys_location + "enc_file";
         this.dec_location = keys_location + "dec_file";
+        this.input_location = keys_location + "input_file";
     }
     
     public void addReadPolicy(String table, String key, String policy){
@@ -57,9 +59,10 @@ public class Server {
         return writeAccessTree.get(table).get(key);
     }
     
-    public ArrayList<File> executeSelect(String table, List<String> fields, String info) throws Exception{
+    public String executeSelect(String table, List<String> fields, String id) throws Exception{
         ArrayList<String> result = new ArrayList<>();
-        ArrayList<File> enc_result = new ArrayList<>();
+        FileWriter input_file = new FileWriter(input_location);
+        BufferedWriter out = new BufferedWriter(input_file);
         String rows = "";
         for(String item : fields) {
             rows = rows.concat(" " + item);
@@ -73,18 +76,20 @@ public class Server {
                 result.add( rs.getString(i) );
             }
             
-            String policy = getReadPolicy(table, info);
-            
             for(int i = 0; i<result.size();i++){
-                TA.cpabe.enc(pubk_location, policy, result.get(i), enc_location+i);
-                enc_result.add(new File(enc_location+i));
+                out.write(result.get(i));
+                out.newLine();
             }
+            
+            String policy = getReadPolicy(table, id);
+            
+            TA.cpabe.enc(pubk_location, policy, input_location, enc_location);
             
         }
         catch(Exception e){}
         
         conn.close();
-        return enc_result;
+        return enc_location;
     }
     
     public String getPubkLocation(){
