@@ -12,7 +12,7 @@ import java.util.List;
  * @author luca
  */
 public class Server {
-    TrustedAuthorithy TA = new TrustedAuthorithy();
+    TrustedAuthorithy TA;
     private String pubk_location;
     private String mk_location;
     private String pvtk_location;
@@ -30,13 +30,14 @@ public class Server {
     LinkedHashMap<String, HashMap<String, String>> writeAccessTree = 
             new LinkedHashMap<>();
     
-    public Server(String keys_location){
+    public Server(String keys_location, TrustedAuthorithy ta){
         this.pubk_location = keys_location + "pub_key";
         this.mk_location = keys_location + "m_key";
         this.pvtk_location = keys_location + "pvt_key";
         this.enc_location = keys_location + "enc_file";
         this.dec_location = keys_location + "dec_file";
         this.input_location = keys_location + "input_file";
+        this.TA = ta;
     }
     
     public void addReadPolicy(String table, String key, String policy){
@@ -95,48 +96,100 @@ public class Server {
         conn.close();
         return enc_location;
     }
-	
-	public String executeInsert(Client client, String table, List<String> fields, String id) {
-		String policy = getWritePolicy(table, id);
-		String random = ""+Math.random();
-		FileWriter input_file = new FileWriter(input_location);
-        BufferedWriter out = new BufferedWriter(input_file);
-		try { out.write(random); out.newLine(); out.close(); }
-		catch(IOException e) { System.out.println("Something broke"); }
-		TA.cpabe.enc(pubk_location, policy, input_location, enc_location);
-		String response_loc = client.authWrite(enc_location);
-		
-		FileReader fr = new FileReader(response_loc);
-		BufferedReader br = new BufferedReader(fr);
-		boolean match = false;
-		try { match = random.equals(br.readLine()); br.close();}
-		catch(IOException e) { System.out.println("Something broke"); }
-		if(match) { //dostuff 
-			String values = "(";
-			for(String item : fields) {
-				values = values.concat("'"+item+"', ");
-			}
-			values = values.substring(0,values.length()-3);
-			values = values + ")";
-			String returnstring = "";
-			try {
-				Class.forName(db_driver).newInstance();
-				conn = DriverManager.getConnection(db_url+db_name,db_user,db_pw);
-				Statement stat = conn.createStatement();
-				String query = "INSERT INTO "+table+" VALUES "+values;
-				int num_rows_affected = stat.executeUpdate(query);
-				conn.close();
-				returnstring = "Insert statement executed. Number of rows affected = "+num_rows_affected;
+
+    public void setupPolicies(Client client, String table, List<String> fields, String id) {
+        switch(table) {
+                case "patient_data": {
+                    if(client.type.equalsIgnoreCase("patient")) {
+                        addReadPolicy(table, id, id+" hospital doctor 1of3");
+                        addReadPolicy("view-employer", id, fields.get(10)+" 1of1");
+                        addWritePolicy(table, id, id+" 1of1");
+                    }
+                }
+                case "insurance": {
+                    if(client.type.equalsIgnoreCase("insurance")) {
+                        addReadPolicy(table, id, id+" "+fields.get(0)+" 1of2"); 
+                        addReadPolicy("view-insurance", id, id+" health-club 1of2");
+                        addReadPolicy("view-insurance-LT", id, id+" 1of1");
+                        addWritePolicy(table, id, id+" 1of1");
+                    }
+                    if(client.type.equalsIgnoreCase("patient")) {
+                        addReadPolicy(table, id, id+" "+fields.get(1)+" 1of2"); 
+                    }
+                }
+                case "medical_history": {
+                    if(client.type.equalsIgnoreCase("hospital")|| client.type.equalsIgnoreCase("doctor")) {
+                        addReadPolicy(table, id, fields.get(0)+" hospital doctor 1of3"); //ISSUE!
+                        addReadPolicy("view-hospital", id, "hospital pharmacy 1of2");
+                        addWritePolicy(table, id, "hospital doctor 1of2");
+                    }
+                }
+                case "admittance": {
+                    if(client.type.equalsIgnoreCase("hospital")|| client.type.equalsIgnoreCase("doctor")) {
+                        addReadPolicy(table, id, fields.get(0)+" hospital doctor 1of3");
+                        addWritePolicy(table, id, "hospital doctor healtclub 1of3");
+                    }
+                }
+                case "long-term_treatment": {
+                    if(client.type.equalsIgnoreCase("hospital")|| client.type.equalsIgnoreCase("doctor")) {
+                        addReadPolicy(table, id, fields.get(0)+" health-club pharmacy 1of3");
+                        addWritePolicy(table, id, "hospital doctor 1of2");
+                    }
+                }
+                
+        }
+    }
+    
+    public String executeInsert(Client client, String table, List<String> fields, String id) {
+        setupPolicies(client,table,fields,id);
+        String policy = getWritePolicy(table, id);
+	String random = ""+Math.random();
+        boolean match = false;
+	try {
+            FileWriter input_file = new FileWriter(input_location);
+            BufferedWriter out = new BufferedWriter(input_file);
+            out.write(random); out.newLine(); out.close(); 
+            try {
+                TA.cpabe.enc(pubk_location, policy, input_location, enc_location);
             }
-			catch(Exception e) {
-				returnstring = "Something went wrong executing insert statement";
-			}
-			return returnstring;
-		}
-		else { 
-			return "Authentication failed!";
-		}
-	}
+            catch(Exception e){};
+            String response_loc = client.authWrite(enc_location);
+            FileReader fr = new FileReader(response_loc);
+            BufferedReader br = new BufferedReader(fr);
+            match = random.equals(br.readLine()); 
+            br.close();
+        }
+	catch(IOException e) { 
+            System.out.println("Something broke"); 
+        }
+        if(match) { //dostuff 
+            String values = "(";
+            for(String item : fields) {
+		values = values.concat("'"+item+"', ");
+            }
+            values = values.substring(0,values.length()-3);
+            values = values + ")";
+            String returnstring = "";
+            try {
+                Class.forName(db_driver).newInstance();
+		conn = DriverManager.getConnection(db_url+db_name,db_user,db_pw);
+		Statement stat = conn.createStatement();
+		String query = "INSERT INTO "+table+" VALUES "+values;
+		int num_rows_affected = stat.executeUpdate(query);
+		conn.close();
+		returnstring = "Insert statement executed. Number of rows affected = "+num_rows_affected;
+            }
+            catch(Exception e) {
+                returnstring = "Something went wrong executing insert statement";
+            }
+            return returnstring;
+        }
+        else {
+            readAccessTree.remove(table).remove(id);
+            writeAccessTree.remove(table).remove(id);
+            return "Authentication failed!";
+        }
+    }
     
     
     public String getPubkLocation(){

@@ -40,11 +40,4 @@ public class TrustedAuthorithy {
         return list;
     }   
     
-    public void keygen(String pubk_location, String prvk_location, String mk_location, String attr_str) throws IOException {
-        try{
-            cpabe.keygen(pubk_location, prvk_location, mk_location, attr_str);
-        }
-        catch (NoSuchAlgorithmException | IOException e) {}
-    }
-    
 }
