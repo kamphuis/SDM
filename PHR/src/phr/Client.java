@@ -21,6 +21,7 @@ public class Client {
     private String pvtk_location;
     private String dec_location;
     private String enc_location;
+    public String auth_location;
     //private String input_location;
     
     // definition of the Client
@@ -39,6 +40,7 @@ public class Client {
             this.pvtk_location = keys_location + "pvt_key";
             this.enc_location = keys_location + "enc_file";
             this.dec_location = keys_location + "dec_file";
+            this.auth_location = keys_location + "auth_file";
         }
         else {
             System.out.println("insert a valid type");
@@ -48,11 +50,11 @@ public class Client {
     }
     
     // send a SQL request to the server
-    public void read(String table, List<String> fields, Server s) throws Exception{
+    public void read(String table, List<String> fields, String clause, Server s) throws Exception{
         
         try{
             this.attributes = TA.setup(s.getPubkLocation(), this.mk_location, this.type, this.id);
-            String result_location = s.executeSelect(table,fields,id);
+            String result_location = s.executeSelect(table,fields,id,clause);
             String att_str = "";
             for(String item : attributes[1]) {
                 att_str = att_str.concat(item+" ");
@@ -69,27 +71,25 @@ public class Client {
     
     public void write(String table, List<String> fields, List<String> values, Server s, String input_location) throws Exception{
         
-          
-        ArrayList<File> result = new ArrayList<File>();
-    
+         
         String policy = s.getWritePolicy(table, this.id);
       
         try{
             this.attributes = TA.setup(s.getPubkLocation(), this.mk_location, this.type, this.id);
-            
-            result = s.executeInsert(table,fields,id);
-            
-            //challenge-response
-            
-            
-            
             TA.keygen(pubk_location, pvtk_location, mk_location, table);
-            for(File item : result) {
-                TA.cpabe.dec(pubk_location, pvtk_location, item.getPath(), dec_location);
-            }
+            System.out.println(s.executeInsert(this,table,fields,id));
         }
         catch(Exception e) {}        
     }
     
-
+    public String authWrite(String toAuth_location){
+        try{
+            TA.cpabe.dec(pubk_location, pvtk_location, toAuth_location, auth_location);
+        }
+        catch(Exception e){}
+        
+        return auth_location;
+    }
+    
+    
 }

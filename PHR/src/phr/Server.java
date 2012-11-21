@@ -30,7 +30,7 @@ public class Server {
     LinkedHashMap<String, HashMap<String, String>> writeAccessTree = 
             new LinkedHashMap<>();
     
-    public Server(String type, String keys_location){
+    public Server(String keys_location){
         this.pubk_location = keys_location + "pub_key";
         this.mk_location = keys_location + "m_key";
         this.pvtk_location = keys_location + "pvt_key";
@@ -81,6 +81,8 @@ public class Server {
                 out.newLine();
             }
             
+            out.close();
+            
             String policy = getReadPolicy(table, id);
             
             TA.cpabe.enc(pubk_location, policy, input_location, enc_location);
@@ -91,6 +93,7 @@ public class Server {
         conn.close();
         return enc_location;
     }
+    
     
     public String getPubkLocation(){
         return this.pubk_location;
