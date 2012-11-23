@@ -41,11 +41,11 @@ public class Client {
             createFile(mk_location);
             this.pvtk_location = keys_location + "prv_key";
             createFile(pvtk_location);
-            this.enc_location = keys_location + "enc_file";
+            this.enc_location = keys_location + "enc_file.pdf.cpabe";
             createFile(enc_location);
-            this.dec_location = keys_location + "dec_file";
+            this.dec_location = keys_location + "dec_file.pdf.new";
             createFile(dec_location);
-            this.auth_location = keys_location + "auth_file";
+            this.auth_location = keys_location + "auth_file.pdf.new";
             createFile(auth_location);
             System.out.println("setup "+type+" "+id);
             this.attributes = TA.setup(pubk_location, mk_location, type, id);
@@ -53,7 +53,7 @@ public class Client {
                 att_str = att_str.concat(item+" ");
             }
             att_str=att_str.substring(0, att_str.length()-1);
-            System.out.println("generate key "+att_str);
+            System.out.println("generate keys "+att_str);
             TA.cpabe.keygen(pubk_location, pvtk_location, mk_location, att_str);
         }
         else {
@@ -68,10 +68,7 @@ public class Client {
         
         try{
             String result_location = s.executeSelect(table,fields,id,clause);
-            System.out.println("start read dec");
             TA.cpabe.dec(pubk_location, pvtk_location, result_location, dec_location);
-            System.out.println("end read dec");
-
         }
         catch(Exception e) {}        
     }

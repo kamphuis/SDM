@@ -37,11 +37,11 @@ public class Server {
         createFile(mk_location);
         this.pvtk_location = keys_location + "prv_key";
         createFile(pvtk_location);
-        this.enc_location = keys_location + "enc_file";
+        this.enc_location = keys_location + "enc_file.pdf.cpabe";
         createFile(enc_location);
-        this.dec_location = keys_location + "dec_file";
+        this.dec_location = keys_location + "dec_file.pdf.new";
         createFile(dec_location);
-        this.input_location = keys_location + "input_file";
+        this.input_location = keys_location + "input_file.pdf";
         createFile(input_location);
         this.TA = ta;
     }
@@ -63,7 +63,6 @@ public class Server {
     }
     
     public String getWritePolicy(String table, String key) {
-        System.out.println(writeAccessTree.get(table).get(key));
         return writeAccessTree.get(table).get(key);
     }
     
@@ -155,17 +154,13 @@ public class Server {
             File input_file = new File(input_location);
             FileWriter in_file = new FileWriter(input_file.getAbsoluteFile());
             BufferedWriter out = new BufferedWriter(in_file);
-            out.write(random); System.out.println(random); out.close(); 
-            FileReader fr1 = new FileReader(input_location);
-            BufferedReader br1 = new BufferedReader(fr1);
-            System.out.println(br1.readLine());
-            br1.close();
+            out.write(random); out.close(); 
             try {
-                //TA.cpabe.enc(pubk_location, policy, input_location, enc_location);
+                TA.cpabe.enc(pubk_location, policy, input_location, enc_location);
             }
             catch(Exception e){}
             String response_loc = client.authWrite(enc_location);
-            FileReader fr = new FileReader(response_loc);
+            FileReader fr = new FileReader(input_location);
             BufferedReader br = new BufferedReader(fr);
             match = random.equals(br.readLine()); 
             br.close();
