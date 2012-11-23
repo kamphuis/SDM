@@ -42,12 +42,11 @@ public class Cpabe {
 		BswabePub pub;
 		BswabeMsk msk;
 		byte[] pub_byte, msk_byte, prv_byte;
-
+                
 		/* get BswabePub from pubfile */
 		pub_byte = Common.suckFile(pubfile);
 		pub = SerializeUtils.unserializeBswabePub(pub_byte);
-
-		/* get BswabeMsk from mskfile */
+                /* get BswabeMsk from mskfile */
 		msk_byte = Common.suckFile(mskfile);
 		msk = SerializeUtils.unserializeBswabeMsk(pub, msk_byte);
 

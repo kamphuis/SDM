@@ -4,7 +4,7 @@ package phr;
 import cpabe.*;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
-import java.util.LinkedList;
+import java.util.*;
 /**
  *
  * @author luca
@@ -12,7 +12,8 @@ import java.util.LinkedList;
 public class TrustedAuthorithy {
     
     Cpabe cpabe;
-    
+    List<String> bsn = new LinkedList<String>();
+    List<String> insurances = new LinkedList<String>();
     
     public TrustedAuthorithy(){
         cpabe = new Cpabe();
@@ -20,23 +21,34 @@ public class TrustedAuthorithy {
     
     //id is the bsn in case of a client or the company name in case of an insurance company
     //in case of any other entity the info is useless and can be left empty
-    public LinkedList<String>[] setup(String pubk_location, String mk_location, String type, String id) throws Exception {
-        LinkedList<String> list[] = (LinkedList<String>[]) new LinkedList[2];
+    public String[] setup(String pubk_location, String mk_location, String type, String id) {
+        
+        String list[] = new String[2];
         try{
-            cpabe.setup(pubk_location, mk_location);
-            if((type.equalsIgnoreCase("patient")) || (type.equalsIgnoreCase("insurance"))) {
-                //possibility to add a double check on the bsn and name of the insurance company
-                //the whole attributes generation can be managed in a fancier way (e.g. transaction between
-                //client and TA)
-                list[0].add(type); //write attributes
-                list[1].add(id); //read attributes
+            if(type.equalsIgnoreCase(":patient")) {
+                if(!bsn.contains(id)){
+                    bsn.add(id);
+                    list[0]=type; //write attributes
+                    list[1]=id; //read attributes
+                }
+                else throw new IOException();
+                    
+            }
+            else if(type.equalsIgnoreCase(":insurance")){
+                if(!insurances.contains(id)){
+                    insurances.add(id);
+                    list[0]=type; //write attributes
+                    list[1]=id; //read attributes
+                }
+                else throw new IOException();
             }
             else {
-                list[0].add(type); //write attributes
-                list[1].add(type); //read attributes
+                list[0]=type; //write attributes
+                list[1]=type; //read attributes
             }
+            cpabe.setup(pubk_location, mk_location);
         }
-        catch (IOException | ClassNotFoundException e) {}
+        catch (IOException | ClassNotFoundException e) {System.out.println("duplicated id"); return null;}
         return list;
     }   
     

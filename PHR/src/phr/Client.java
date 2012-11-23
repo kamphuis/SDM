@@ -2,7 +2,7 @@
 package phr;
 
 
-import java.io.File;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -13,7 +13,7 @@ import java.util.List;
  */
 public class Client {
     TrustedAuthorithy TA;
-    private LinkedList<String> attributes[] = (LinkedList<String>[]) new LinkedList[2];
+    private String attributes[] = new String[2];
     public String type;
     private String id;
     private String pubk_location;
@@ -23,32 +23,37 @@ public class Client {
     private String enc_location;
     private String att_str = "";
     public String auth_location;
-    
+
     // definition of the Client
     public Client(String type, String id, String keys_location, Server s, TrustedAuthorithy ta) throws Exception{
-        if(type.equalsIgnoreCase("Patient") || 
-                type.equalsIgnoreCase("Hospital") || 
-                type.equalsIgnoreCase("Doctor") ||
-                type.equalsIgnoreCase("Pharmacy") ||
-                type.equalsIgnoreCase("Insurance") ||
-                type.equalsIgnoreCase("Health Club") ||
-                type.equalsIgnoreCase("Employer")) {
+        if(type.equalsIgnoreCase(":Patient") || 
+                type.equalsIgnoreCase(":Hospital") || 
+                type.equalsIgnoreCase(":Doctor") ||
+                type.equalsIgnoreCase(":Pharmacy") ||
+                type.equalsIgnoreCase(":Insurance") ||
+                type.equalsIgnoreCase(":Health-Club") ||
+                type.equalsIgnoreCase(":Employer")) {
             this.TA=ta;
             this.type = type;
             this.id = id;
-            this.pubk_location = keys_location + "pub_key";
-            this.mk_location = keys_location + "m_key";
-            this.pvtk_location = keys_location + "pvt_key";
+            this.pubk_location = s.getPubkLocation(id);
+            this.mk_location = keys_location + "master_key";
+            createFile(mk_location);
+            this.pvtk_location = keys_location + "prv_key";
+            createFile(pvtk_location);
             this.enc_location = keys_location + "enc_file";
+            createFile(enc_location);
             this.dec_location = keys_location + "dec_file";
+            createFile(dec_location);
             this.auth_location = keys_location + "auth_file";
-            this.attributes = TA.setup(s.getPubkLocation(), this.mk_location, this.type, this.id);
-            for(String item : attributes[0]) {
+            createFile(auth_location);
+            System.out.println("setup "+type+" "+id);
+            this.attributes = TA.setup(pubk_location, mk_location, type, id);
+            for(String item : attributes) {
                 att_str = att_str.concat(item+" ");
             }
-            for(String item : attributes[1]) {
-                att_str = att_str.concat(item+" ");
-            }
+            att_str=att_str.substring(0, att_str.length()-1);
+            System.out.println("generate key "+att_str);
             TA.cpabe.keygen(pubk_location, pvtk_location, mk_location, att_str);
         }
         else {
@@ -63,7 +68,9 @@ public class Client {
         
         try{
             String result_location = s.executeSelect(table,fields,id,clause);
+            System.out.println("start read dec");
             TA.cpabe.dec(pubk_location, pvtk_location, result_location, dec_location);
+            System.out.println("end read dec");
 
         }
         catch(Exception e) {}        
@@ -71,7 +78,7 @@ public class Client {
 
     
     
-    public void write(String table, List<String> fields, Server s, String input_location) throws Exception{
+    public void write(String table, List<String> fields, Server s) throws Exception{
         try{
             System.out.println(s.executeInsert(this,table,fields,id));
         }
@@ -87,5 +94,12 @@ public class Client {
         return auth_location;
     }
     
+    public static void createFile(String path) {
+        try{
+            File f = new File(path);
+            f.createNewFile();
+        }
+        catch(IOException e){}
+    }
     
 }

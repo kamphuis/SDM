@@ -53,9 +53,8 @@ public class SerializeUtils {
 		int i;
 		int len;
 		byte[] str_byte;
-	
-		len = unserializeUint32(arr, offset);
-		offset += 4;
+                len = unserializeUint32(arr, offset);
+                offset += 4;
 		str_byte = new byte[len];
 		for (i = 0; i < len; i++)
 			str_byte[i] = arr[offset + i];
@@ -79,29 +78,26 @@ public class SerializeUtils {
 	public static BswabePub unserializeBswabePub(byte[] b) {
 		BswabePub pub;
 		int offset;
-	
 		pub = new BswabePub();
 		offset = 0;
-	
 		StringBuffer sb = new StringBuffer("");
 		offset = unserializeString(b, offset, sb);
-		pub.pairingDesc = sb.substring(0);
-	
-		CurveParameters params = new DefaultCurveParameters()
+                pub.pairingDesc = sb.substring(0);
+                CurveParameters params = new DefaultCurveParameters()
 				.load(new ByteArrayInputStream(pub.pairingDesc.getBytes()));
-		pub.p = PairingFactory.getPairing(params);
+                pub.p = PairingFactory.getPairing(params);
 		Pairing pairing = pub.p;
-	
+                
 		pub.g = pairing.getG1().newElement();
 		pub.h = pairing.getG1().newElement();
 		pub.gp = pairing.getG2().newElement();
 		pub.g_hat_alpha = pairing.getGT().newElement();
-	
+                
 		offset = unserializeElement(b, offset, pub.g);
 		offset = unserializeElement(b, offset, pub.h);
 		offset = unserializeElement(b, offset, pub.gp);
 		offset = unserializeElement(b, offset, pub.g_hat_alpha);
-	
+                
 		return pub;
 	}
 
@@ -230,9 +226,9 @@ public class SerializeUtils {
 	private static int unserializeUint32(byte[] arr, int offset) {
 		int i;
 		int r = 0;
-	
-		for (i = 3; i >= 0; i--)
+                for (i = 3; i >= 0; i--) {
 			r |= (byte2int(arr[offset++])) << (i * 8);
+                }
 		return r;
 	}
 
@@ -285,7 +281,7 @@ public class SerializeUtils {
 	}
 
 	private static int byte2int(byte b) {
-		if (b >= 0)
+            	if (b >= 0)
 			return b;
 		return (256 + b);
 	}

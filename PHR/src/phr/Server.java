@@ -32,11 +32,17 @@ public class Server {
     
     public Server(String keys_location, TrustedAuthorithy ta){
         this.pubk_location = keys_location + "pub_key";
-        this.mk_location = keys_location + "m_key";
-        this.pvtk_location = keys_location + "pvt_key";
+        createFile(pubk_location);
+        this.mk_location = keys_location + "master_key";
+        createFile(mk_location);
+        this.pvtk_location = keys_location + "prv_key";
+        createFile(pvtk_location);
         this.enc_location = keys_location + "enc_file";
+        createFile(enc_location);
         this.dec_location = keys_location + "dec_file";
+        createFile(dec_location);
         this.input_location = keys_location + "input_file";
+        createFile(input_location);
         this.TA = ta;
     }
     
@@ -57,13 +63,15 @@ public class Server {
     }
     
     public String getWritePolicy(String table, String key) {
+        System.out.println(writeAccessTree.get(table).get(key));
         return writeAccessTree.get(table).get(key);
     }
     
     public String executeSelect(String table, List<String> fields, String id, String clause) throws Exception{
         ArrayList<String> result = new ArrayList<>();
         FileWriter input_file = new FileWriter(input_location);
-        BufferedWriter out = new BufferedWriter(input_file);
+        BufferedWriter out;
+        out = new BufferedWriter(input_file);
         String rows = "";
         for(String item : fields) {
             rows = rows.concat(" " + item);
@@ -72,7 +80,7 @@ public class Server {
             Class.forName(db_driver).newInstance();
             conn = DriverManager.getConnection(db_url+db_name,db_user,db_pw);
             Statement stat = conn.createStatement();
-			String query = "SELECT "+rows+" FROM "+table;
+			String query = "SELECT"+rows+" FROM "+table;
 			if(!clause.equals("")) { query = query+" WHERE "+clause; }
             ResultSet rs = stat.executeQuery(query);
             for (int i=0; rs.next(); i++) {
@@ -85,14 +93,12 @@ public class Server {
             }
             
             out.close();
-            
             String policy = getReadPolicy(table, id);
-            
             TA.cpabe.enc(pubk_location, policy, input_location, enc_location);
             
         }
-        catch(Exception e){}
-        
+        catch(Exception e){System.out.println("something went wrong executing SELECT");}
+      
         conn.close();
         return enc_location;
     }
@@ -100,38 +106,38 @@ public class Server {
     public void setupPolicies(Client client, String table, List<String> fields, String id) {
         switch(table) {
                 case "patient_data": {
-                    if(client.type.equalsIgnoreCase("patient")) {
+                    if(client.type.equalsIgnoreCase(":patient")) {
                         addReadPolicy(table, id, id+" hospital doctor 1of3");
-                        addReadPolicy("view-employer", id, fields.get(10)+" 1of1");
-                        addWritePolicy(table, id, id+" 1of1");
+                        addReadPolicy("view-employer", id, fields.get(10)+" true 1of2");
+                        addWritePolicy(table, id, id+" true 1of2");
                     }
                 }
                 case "insurance": {
-                    if(client.type.equalsIgnoreCase("insurance")) {
+                    if(client.type.equalsIgnoreCase(":insurance")) {
                         addReadPolicy(table, id, id+" "+fields.get(0)+" 1of2"); 
                         addReadPolicy("view-insurance", id, id+" health-club 1of2");
-                        addReadPolicy("view-insurance-LT", id, id+" 1of1");
-                        addWritePolicy(table, id, id+" 1of1");
+                        addReadPolicy("view-insurance-LT", id, id+" true 1of2");
+                        addWritePolicy(table, id, id+" true 1of2");
                     }
-                    if(client.type.equalsIgnoreCase("patient")) {
-                        addReadPolicy(table, id, id+" "+fields.get(1)+" 1of2"); 
+                    if(client.type.equalsIgnoreCase(":patient")) {
+                        addReadPolicy(table, id, id+" "+fields.get(1)+" true 1of2"); 
                     }
                 }
                 case "medical_history": {
-                    if(client.type.equalsIgnoreCase("hospital")|| client.type.equalsIgnoreCase("doctor")) {
+                    if(client.type.equalsIgnoreCase(":hospital")|| client.type.equalsIgnoreCase(":doctor")) {
                         addReadPolicy(table, id, fields.get(0)+" hospital doctor 1of3"); //ISSUE!
                         addReadPolicy("view-hospital", id, "hospital pharmacy 1of2");
                         addWritePolicy(table, id, "hospital doctor 1of2");
                     }
                 }
                 case "admittance": {
-                    if(client.type.equalsIgnoreCase("hospital")|| client.type.equalsIgnoreCase("doctor")) {
+                    if(client.type.equalsIgnoreCase(":hospital")|| client.type.equalsIgnoreCase(":doctor")) {
                         addReadPolicy(table, id, fields.get(0)+" hospital doctor 1of3");
                         addWritePolicy(table, id, "hospital doctor healtclub 1of3");
                     }
                 }
                 case "long-term_treatment": {
-                    if(client.type.equalsIgnoreCase("hospital")|| client.type.equalsIgnoreCase("doctor")) {
+                    if(client.type.equalsIgnoreCase(":hospital")|| client.type.equalsIgnoreCase(":doctor")) {
                         addReadPolicy(table, id, fields.get(0)+" health-club pharmacy 1of3");
                         addWritePolicy(table, id, "hospital doctor 1of2");
                     }
@@ -143,16 +149,21 @@ public class Server {
     public String executeInsert(Client client, String table, List<String> fields, String id) {
         setupPolicies(client,table,fields,id);
         String policy = getWritePolicy(table, id);
-	String random = ""+Math.random();
+        String random = ""+Math.random();
         boolean match = false;
-	try {
-            FileWriter input_file = new FileWriter(input_location);
-            BufferedWriter out = new BufferedWriter(input_file);
-            out.write(random); out.newLine(); out.close(); 
+        try {
+            File input_file = new File(input_location);
+            FileWriter in_file = new FileWriter(input_file.getAbsoluteFile());
+            BufferedWriter out = new BufferedWriter(in_file);
+            out.write(random); System.out.println(random); out.close(); 
+            FileReader fr1 = new FileReader(input_location);
+            BufferedReader br1 = new BufferedReader(fr1);
+            System.out.println(br1.readLine());
+            br1.close();
             try {
-                TA.cpabe.enc(pubk_location, policy, input_location, enc_location);
+                //TA.cpabe.enc(pubk_location, policy, input_location, enc_location);
             }
-            catch(Exception e){};
+            catch(Exception e){}
             String response_loc = client.authWrite(enc_location);
             FileReader fr = new FileReader(response_loc);
             BufferedReader br = new BufferedReader(fr);
@@ -162,7 +173,7 @@ public class Server {
 	catch(IOException e) { 
             System.out.println("Something broke"); 
         }
-        if(match) { //dostuff 
+        if(match) {
             String values = "(";
             for(String item : fields) {
 		values = values.concat("'"+item+"', ");
@@ -185,18 +196,25 @@ public class Server {
             return returnstring;
         }
         else {
-            readAccessTree.remove(table).remove(id);
-            writeAccessTree.remove(table).remove(id);
             return "Authentication failed!";
         }
     }
     
     
-    public String getPubkLocation(){
-        return this.pubk_location;
+    public String getPubkLocation(String name){
+        
+        return this.pubk_location+"_"+name;
     }
     
     public String getMkLocation(){
         return this.mk_location;
+    }
+    
+    public static void createFile(String path) {
+        try{
+            File f = new File(path);
+            f.createNewFile();
+        }
+        catch(IOException e){}
     }
 }
