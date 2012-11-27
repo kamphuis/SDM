@@ -35,7 +35,8 @@ public class Execute {
                     Client patient1 = new Client(":patient", ":458289023", "/home/luca/NetBeansProjects/test/clients/patient", ser, TA);
                     List<String> l = new LinkedList<String>();
                     System.out.print("insert your BSN (9 characters): ");
-                    l.add(bufRead.readLine());
+                    String bsn = bufRead.readLine();
+                    l.add(bsn);
                     System.out.print("insert your name (max 30 characters): ");
                     l.add("'"+bufRead.readLine()+"'");
                     System.out.print("insert your surname (max 30 characters): ");
@@ -63,13 +64,15 @@ public class Execute {
                         System.out.println("press w to confirm the writing");
                         selection = bufRead.readLine();
                     }
-                    patient1.write("patient_data", l, ser);
+                    patient1.write("patient_data", l, ser, bsn);
                 }
                 else if(sel==2) {
                         List<String> l1 = new LinkedList<String>();
                         Client doctor = new Client(":doctor", ":dr.Gray", "/home/luca/NetBeansProjects/test/clients/doctor", ser ,TA);
                         System.out.println("what table you would like to read: ");
                         String table = bufRead.readLine();
+                        System.out.println("what is the BSN of the patient: ");
+                        String bsn = bufRead.readLine();
                         System.out.println("what fields you would like to read from the table (inser q to terminate)");
                         while(!selection.equalsIgnoreCase("q")){
                             selection = bufRead.readLine();
@@ -84,13 +87,15 @@ public class Execute {
                             System.out.println("press r to confirm the reading");
                             selection = bufRead.readLine();
                         }
-                        doctor.read(table, l1, clause , ser);
+                        doctor.read(table, l1, clause , ser, bsn);
                     }
                 else if(sel==3) {
                         List<String> l1 = new LinkedList<String>();
                         Client insurance = new Client(":insurance", ":Menzis", "/home/luca/NetBeansProjects/test/clients/insurance", ser ,TA);
                         System.out.println("what table you would like to read: ");
                         String table = bufRead.readLine();
+                        System.out.println("what is the BSN of the client: ");
+                        String bsn = bufRead.readLine();
                         System.out.println("what fields you would like to read from the table (inser q to terminate)");
                         while(!selection.equalsIgnoreCase("q")){
                             selection = bufRead.readLine();
@@ -105,13 +110,15 @@ public class Execute {
                             System.out.println("press r to confirm the reading");
                             selection = bufRead.readLine();
                         }
-                        insurance.read(table, l1, clause , ser);
+                        insurance.read(table, l1, clause , ser, bsn);
                  }
                 else if(sel==4) {
                         List<String> l1 = new LinkedList<String>();
                         Client employer = new Client(":employer", ":UT", "/home/luca/NetBeansProjects/test/clients/employer", ser, TA);
                         System.out.println("what table you would like to read: ");
                         String table = bufRead.readLine();
+                        System.out.println("what is the BSN of the employee: ");
+                        String bsn = bufRead.readLine();
                         System.out.println("what fields you would like to read from the table (inser q to terminate)");
                         while(!selection.equalsIgnoreCase("q")){
                             selection = bufRead.readLine();
@@ -126,7 +133,7 @@ public class Execute {
                             System.out.println("press r to confirm the reading");
                             selection = bufRead.readLine();
                         }
-                        employer.read(table, l1, clause , ser);
+                        employer.read(table, l1, clause , ser, bsn);
                 }
                 else if(sel==5) {
                     Client hospital = new Client(":hospital", ":Ziekenhuis", "/home/luca/NetBeansProjects/test/clients/hospital", ser ,TA);
@@ -134,19 +141,20 @@ public class Execute {
                     List<String> l01 = new LinkedList<String>();
                     List<String> l02 = new LinkedList<String>();
                     System.out.print("insert patient BSN (9 characters): ");
-                    l01.add(bufRead.readLine());
+                    String bsn = bufRead.readLine();
+                    l01.add(bsn);
                     System.out.print("insert hospital's name (max 50 characters): ");
                     l01.add("'"+bufRead.readLine()+"'");
                     System.out.print("insert the treatment id (max 10 characters): ");
-                    String t_id = "'"+bufRead.readLine()+"'";
+                    String t_id = bufRead.readLine();
                     l01.add(t_id);
                     l02.add(t_id);
                     System.out.print("insert the entry date (YYYY-MM-DD): ");
                     l01.add("'"+bufRead.readLine()+"'");
                     System.out.print("insert the exit date (YYYY-MM-DD): ");
-                    l01.add(bufRead.readLine());
+                    l01.add("'"+bufRead.readLine()+"'");
                     System.out.print("insert the id of the responsible doctor (max 10 characters): ");
-                    l02.add("'"+bufRead.readLine()+"'");
+                    l02.add(bufRead.readLine());
                     System.out.print("insert a brief description of the treatment (max 100 characters): ");
                     l02.add("'"+bufRead.readLine()+"'");
                     System.out.print("insert the administered drugs (max 100 characters): ");
@@ -158,8 +166,8 @@ public class Execute {
                         System.out.println("press w to confirm the writing");
                         selection = bufRead.readLine();
                     }
-                    hospital.write("admittance", l01, ser);
-                    hospital.write("medical_history", l01, ser);
+                    hospital.write("admittance", l01, ser,bsn);
+                    hospital.write("medical_history", l02, ser,bsn);
                 }
                 else if(sel==6) {
                     Client health_club = new Client(":health-club", ":HC1", "/home/luca/NetBeansProjects/test/clients/health_club", ser, TA);

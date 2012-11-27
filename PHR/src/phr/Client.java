@@ -15,7 +15,7 @@ public class Client {
     TrustedAuthorithy TA;
     private String attributes[] = new String[2];
     public String type;
-    private String id;
+    public String id;
     private String pubk_location;
     private String mk_location;
     private String pvtk_location;
@@ -60,10 +60,10 @@ public class Client {
     }
     
     // send a SQL request to the server
-    public void read(String table, List<String> fields, String clause, Server s) throws Exception{
+    public void read(String table, List<String> fields, String clause, Server s, String bsn) throws Exception{
         
         try{
-            String result_location = s.executeSelect(this,table,fields,id,clause);
+            String result_location = s.executeSelect(this,table,fields,bsn,clause);
             TA.cpabe.dec(pubk_location, pvtk_location, result_location, dec_location);
             System.out.println("readed successfully");
         }
@@ -72,9 +72,9 @@ public class Client {
 
     
     
-    public void write(String table, List<String> fields, Server s) throws Exception{
+    public void write(String table, List<String> fields, Server s, String bsn) throws Exception{
         try{
-            System.out.println(s.executeInsert(this,table,fields,id));
+            System.out.println(s.executeInsert(this,table,fields,bsn));
         }
         catch(Exception e) {}        
     }

@@ -3,9 +3,9 @@ package phr;
 
 import java.io.*;
 import java.sql.*;
-import java.util.ArrayList;
+import java.util.Map;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Scanner;
 /**
@@ -28,10 +28,6 @@ public class Server implements Serializable{
     private static final String db_user = "root";
     private static final String db_pw = "valtuz";
     Connection conn = null;
-    LinkedHashMap<String, HashMap<String, String>> readAccessTree = 
-            new LinkedHashMap<>();
-    LinkedHashMap<String, HashMap<String, String>> writeAccessTree = 
-            new LinkedHashMap<>();
     
     public Server(String keys_location, TrustedAuthorithy ta){
         this.pubk_location = keys_location + "pub_key";
@@ -44,74 +40,85 @@ public class Server implements Serializable{
         this.read_tree_location = keys_location + "read_access_tree";
         this.write_tree_location = keys_location + "write_access_tree";
         this.TA = ta;
-        generateTrees();
     }
     
     public void addReadPolicy(String table, String key, String policy){
-        try{
-            FileWriter input_file = new FileWriter(read_tree_location,true);
-            BufferedWriter out;
-            out = new BufferedWriter(input_file);
-            out.write(table);
-            out.newLine();
-            out.write(key);
-            out.newLine();
-            out.write(policy);
-            out.newLine();
-            out.close();
-        } catch(Exception e){};
-        HashMap<String, String> h = new HashMap<>();
-        h.put(key, policy);
-        readAccessTree.put(table, h);
-    }
-    
-    public void addReadPolicyNoWrite(String table, String key, String policy){
-        HashMap<String, String> h = new HashMap<>();
-        h.put(key, policy);
-        readAccessTree.put(table, h);
+        if(getReadPolicy(table,key).equalsIgnoreCase("")) {
+            try{
+                FileWriter input_file = new FileWriter(read_tree_location,true);
+                BufferedWriter out;
+                out = new BufferedWriter(input_file);
+                out.write(table);
+                out.newLine();
+                out.write(key);
+                out.newLine();
+                out.write(policy);
+                out.newLine();
+                out.close();
+            } catch(Exception e){};
+        }
+        else return;
     }
     
     public void addWritePolicy(String table, String key, String policy){
+        if(getWritePolicy(table,key).equalsIgnoreCase("")) {
+            try{
+                FileWriter input_file = new FileWriter(write_tree_location,true);
+                BufferedWriter out = new BufferedWriter(input_file);
+                out.write(table);
+                out.newLine();
+                out.write(key);
+                out.newLine();
+                out.write(policy);
+                out.newLine();
+                out.close();
+            } catch(Exception e){};
+        }
+        else return;
+    }
+    
+    public String getReadPolicy(String table, String key) {
+        String result = "";
         try{
-            FileWriter input_file = new FileWriter(write_tree_location,true);
-            BufferedWriter out = new BufferedWriter(input_file);
-            out.write(table);
-            out.newLine();
-            out.write(key);
-            out.newLine();
-            out.write(policy);
-            out.newLine();
-            out.close();
-        } catch(Exception e){};
-        HashMap<String, String> h = new HashMap<>();
-        h.put(key, policy);
-        writeAccessTree.put(table, h);
-    }
-    
-    public void addWritePolicyNoWrite(String table, String key, String policy){
-        HashMap<String, String> h = new HashMap<>();
-        h.put(key, policy);
-        writeAccessTree.put(table, h);
-    }
-    
-    public String getReadPolicy(String table, String key, String type) {
-        if((type.equalsIgnoreCase(":patient"))||(type.equalsIgnoreCase(":insurance"))){
-            System.out.println("eccomi");
-            return readAccessTree.get(table).get(key);
+            FileReader fr_read = new FileReader(read_tree_location);
+            Scanner scan1 = new Scanner(fr_read);
+            boolean found = false;
+            while((scan1.hasNextLine())&&(!found)){
+                String f1 = scan1.nextLine();
+                String f2 = scan1.nextLine();
+                if((f1.equalsIgnoreCase(table))&&(f2.equalsIgnoreCase(key))){
+                    result=scan1.nextLine();
+                    found = true;
+                }
+                else scan1.nextLine();
+            }    
+            fr_read.close();
         }
-        else {
-            return readAccessTree.get(table).get(type);
-        }
+        catch(Exception e){}
+        return result;
     }
     
-    public String getWritePolicy(String table, String key, String type) {
-        if((type.equalsIgnoreCase(":patient"))||(type.equalsIgnoreCase(":insurance"))){
-            return writeAccessTree.get(table).get(key);
-        }
-        else return writeAccessTree.get(table).get(type);
+    public String getWritePolicy(String table, String key) {
+        String result = "";
+        try{
+            FileReader fr_read = new FileReader(write_tree_location);
+            Scanner scan = new Scanner(fr_read);
+            boolean found = false;
+            while((scan.hasNextLine())&&(!found)){
+                String f1 = scan.nextLine();
+                String f2 = scan.nextLine();
+                if((f1.equalsIgnoreCase(table))&&(f2.equalsIgnoreCase(key))){
+                    result=scan.nextLine();
+                    found = true;
+                }
+                else scan.nextLine();
+            }    
+            fr_read.close();
+        }catch(Exception e){}
+        return result;
     }
     
-    public String executeSelect(Client client, String table, List<String> fields, String id, String clause) throws Exception{
+    public String executeSelect(Client client, String table, List<String> fields, String bsn, String clause) throws Exception{
         FileWriter input_file = new FileWriter(input_location);
         BufferedWriter out;
         out = new BufferedWriter(input_file);
@@ -140,9 +147,9 @@ public class Server implements Serializable{
             
             out.close();
             System.out.print("the read policy of this table is: ");
-            System.out.println(getReadPolicy(table, id, client.type));
-            String policy = getReadPolicy(table, id, client.type);
-            TA.cpabe.enc(pubk_location+"_"+id, policy, input_location, enc_location);
+            System.out.println(getReadPolicy(table, bsn));
+            String policy = getReadPolicy(table, bsn);
+            TA.cpabe.enc(pubk_location+"_"+client.id, policy, input_location, enc_location);
         }
         catch(Exception e){
             System.out.println("something went wrong executing SELECT");
@@ -156,62 +163,42 @@ public class Server implements Serializable{
     public void setupPolicies(Client client, String table, List<String> fields, String id) {
         if(table.equalsIgnoreCase("patient_data")) {
                     if(client.type.equalsIgnoreCase(":patient")) {
-                        addReadPolicy(table, id, id+" :hospital :doctor 1of3");
-                        addReadPolicy(table, ":hospital", id+" :hospital :doctor 1of3");
-                        addReadPolicy(table, ":doctor", id+" :hospital :doctor 1of3");
-                        addReadPolicy("view-employer", id, fields.get(10)+" true 1of2");
-                        addWritePolicy(table, id, id+" true 1of2");
+                        addReadPolicy(table, id, ":"+id+" :hospital :doctor 1of3");
+                        addWritePolicy(table, id, ":"+id+" true 1of2");
                     }
                 }
         
         else if(table.equalsIgnoreCase("insurance")) {
                     if(client.type.equalsIgnoreCase(":insurance")) {
-                        addReadPolicy(table, id, id+" "+fields.get(0)+" 1of2"); 
-                        addReadPolicy(table, fields.get(0), id+" "+fields.get(0)+" 1of2"); 
-                        addReadPolicy("view-insurance", id, id+" :health-club 1of2");
-                        addReadPolicy("view-insurance", ":health-club", id+" :health-club 1of2");
-                        addReadPolicy("view-insurance-LT", id, id+" true 1of2");
-                        addWritePolicy(table, id, id+" true 1of2");
+                        addReadPolicy(table, id, ":"+id+" "+client.id+" 1of2"); 
+                        addWritePolicy(table, id, client.id+" true 1of2");
                     }
                     if(client.type.equalsIgnoreCase(":patient")) {
-                        addReadPolicy(table, id, id+" "+fields.get(1)+" 1of2"); 
-                        addReadPolicy(table, fields.get(1), id+" "+fields.get(1)+" 1of2"); 
+                        addReadPolicy(table, id, ":"+id+" "+fields.get(1)+" 1of2"); 
                     }
                 }
         else if(table.equalsIgnoreCase("medical_history")) {
                     if(client.type.equalsIgnoreCase(":hospital")|| client.type.equalsIgnoreCase(":doctor")) {
-                        addReadPolicy(table, ":hospital", fields.get(0)+" :hospital :doctor 1of3");
-                        addReadPolicy(table, fields.get(0), fields.get(0)+" :hospital :doctor 1of3");
-                        addReadPolicy(table, ":doctor", fields.get(0)+" :hospital :doctor 1of3");
-                        addReadPolicy("view-hospital", ":hospital", ":hospital :pharmacy 1of2");
-                        addReadPolicy("view-hospital", ":pharmacy", ":hospital :pharmacy 1of2");
-                        addWritePolicy(table, ":hospital", ":hospital :doctor 1of2");
-                        addWritePolicy(table, ":doctor", ":hospital :doctor 1of2");
+                        addReadPolicy(table, id, ":"+id+" :hospital :doctor 1of3"); //ISSUE
+                        addWritePolicy(table, id, ":hospital :doctor 1of2");
                     }
                 }
         else if(table.equalsIgnoreCase("admittance")) {
                     if(client.type.equalsIgnoreCase(":hospital")|| client.type.equalsIgnoreCase(":doctor")) {
-                        addReadPolicy(table, fields.get(0), fields.get(0)+" :hospital :doctor 1of3");
-                        addReadPolicy(table, ":hospital", fields.get(0)+" :hospital :doctor 1of3");
-                        addReadPolicy(table, ":doctor", fields.get(0)+" :hospital :doctor 1of3");
-                        addWritePolicy(table, ":hospital", ":hospital :doctor :healtclub 1of3");
-                        addWritePolicy(table, ":doctor", ":hospital :doctor :healtclub 1of3");
-                        addWritePolicy(table, ":health-club", ":hospital :doctor :healtclub 1of3");
+                        addReadPolicy(table, id, ":"+id+" :hospital :doctor 1of3");
+                        addWritePolicy(table, id, ":hospital :doctor :healtclub 1of3");
                     }
                 }
         else if(table.equalsIgnoreCase("long-term_treatment")) {
                     if(client.type.equalsIgnoreCase(":hospital")|| client.type.equalsIgnoreCase(":doctor")) {
-                        addReadPolicy(table, fields.get(0), fields.get(0)+" :health-club :pharmacy 1of3");
-                        addReadPolicy(table, ":health-club", fields.get(0)+" :health-club :pharmacy 1of3");
-                        addReadPolicy(table, ":pharmacy", fields.get(0)+" :health-club :pharmacy 1of3");
-                        addWritePolicy(table, ":hospital", ":hospital :doctor 1of2");
-                        addWritePolicy(table, ":doctor", ":hospital :doctor 1of2");
+                        addReadPolicy(table, id, ":"+id+" :health-club :pharmacy 1of3");
+                        addWritePolicy(table, id, ":hospital :doctor 1of2");
                     }
                 }
     }
     
-    public String executeInsert(Client client, String table, List<String> fields, String id) {
-        setupPolicies(client,table,fields,id);
+    public String executeInsert(Client client, String table, List<String> fields, String bsn) {
+        setupPolicies(client,table,fields,bsn);
         String random = ""+Math.random();
         boolean match = false;
         try {
@@ -220,9 +207,9 @@ public class Server implements Serializable{
             BufferedWriter out = new BufferedWriter(in_file);
             out.write(random); out.close(); 
             try {
-                String policy = getWritePolicy(table, id, client.type);
+                String policy = getWritePolicy(table, bsn);
                 System.out.println("writing policy of the entry in the table: "+policy);
-                TA.cpabe.enc(pubk_location+"_"+id, policy, input_location, enc_location);
+                TA.cpabe.enc(pubk_location+"_"+client.id, policy, input_location, enc_location);
             }
             catch(Exception e){System.out.println(e.getMessage());}
             String response_loc = client.authWrite(enc_location);
@@ -280,20 +267,5 @@ public class Server implements Serializable{
             f.createNewFile();
         }
         catch(IOException e){}
-    }
-    
-    public void generateTrees(){
-        try{
-            FileReader fr_read = new FileReader(read_tree_location);
-            Scanner scan1 = new Scanner(fr_read);
-            FileReader fr_write = new FileReader(read_tree_location);
-            Scanner scan2 = new Scanner(fr_write);
-            while(scan1.hasNextLine()){
-                addReadPolicyNoWrite(scan1.nextLine(),scan1.nextLine(),scan1.nextLine());
-            }    
-            while(scan2.hasNextLine()){
-                addWritePolicyNoWrite(scan2.nextLine(),scan2.nextLine(),scan2.nextLine());
-            }    
-        }catch(Exception e){}
     }
 }
