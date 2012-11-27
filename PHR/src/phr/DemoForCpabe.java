@@ -5,6 +5,9 @@
 package phr;
 
 import cpabe.Cpabe;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 
 public class DemoForCpabe {
 	final static boolean DEBUG = true;
@@ -409,7 +412,7 @@ public class DemoForCpabe {
 			+ "1of2 executive_level_ge_2^04 executive_level_ge_2^08 executive_level_ge_2^16 executive_level_ge_2^32 1of5 audit_group strategy_team 2of3 business_staff 2of2 1of2";
 
 	static String student_attr = "objectClass:inetOrgPerson objectClass:organizationalPerson "
-			+ "sn:student3 cn:student2 uid:student2 userPassword:student2 "
+			+ "sn:student2 cn:student2 uid:student2 userPassword:student2 "
 			+ "ou:idp o:computer mail:student2@sdu.edu.cn title:student";
 
 	static String student_policy = "sn:student2 cn:student2 uid:student2 3of3";
@@ -433,17 +436,15 @@ public class DemoForCpabe {
 		test.keygen(pubfile, prvfile, mskfile, attr_str);
 		println("//end to keygen");
 
-                println("//start to setup1");
-		test.setup(pubfile, mskfile1);
-		println("//end to setup1");
-
+                FileWriter input_file = new FileWriter(inputfile);
+                BufferedWriter out;
+                out = new BufferedWriter(input_file);
+                out.append("213912898128818138912");
+                out.close();
                 
-                println("//start to keygen1");
-		test.keygen(pubfile1, prvfile1, mskfile1, attr_str);
-		println("//end to keygen1");
                 
-		println("//start to enc");
-		test.enc(pubfile, policy, inputfile, encfile);
+                println("//start to enc");
+		test.enc(pubfile, policy, inputfile, encfile);  
 		println("//end to enc");
 
 		println("//start to dec");

@@ -21,9 +21,8 @@ public class Client {
     private String pvtk_location;
     private String dec_location;
     private String enc_location;
-    private String att_str = "";
+    public String att_str = "";
     public String auth_location;
-
     // definition of the Client
     public Client(String type, String id, String keys_location, Server s, TrustedAuthorithy ta) throws Exception{
         if(type.equalsIgnoreCase(":Patient") || 
@@ -36,24 +35,21 @@ public class Client {
             this.TA=ta;
             this.type = type;
             this.id = id;
+            keys_location = keys_location+"_"+id+"_";
             this.pubk_location = s.getPubkLocation(id);
             this.mk_location = keys_location + "master_key";
-            createFile(mk_location);
             this.pvtk_location = keys_location + "prv_key";
-            createFile(pvtk_location);
             this.enc_location = keys_location + "enc_file.pdf.cpabe";
-            createFile(enc_location);
             this.dec_location = keys_location + "dec_file.pdf.new";
-            createFile(dec_location);
             this.auth_location = keys_location + "auth_file.pdf.new";
-            createFile(auth_location);
             System.out.println("setup "+type+" "+id);
             this.attributes = TA.setup(pubk_location, mk_location, type, id);
             for(String item : attributes) {
                 att_str = att_str.concat(item+" ");
             }
             att_str=att_str.substring(0, att_str.length()-1);
-            System.out.println("generate keys "+att_str);
+            System.out.println("with attributes ==> "+att_str);
+            System.out.println("generate keys related to attributes ");
             TA.cpabe.keygen(pubk_location, pvtk_location, mk_location, att_str);
         }
         else {
@@ -67,8 +63,9 @@ public class Client {
     public void read(String table, List<String> fields, String clause, Server s) throws Exception{
         
         try{
-            String result_location = s.executeSelect(table,fields,id,clause);
+            String result_location = s.executeSelect(this,table,fields,id,clause);
             TA.cpabe.dec(pubk_location, pvtk_location, result_location, dec_location);
+            System.out.println("readed successfully");
         }
         catch(Exception e) {}        
     }
@@ -90,13 +87,4 @@ public class Client {
         
         return auth_location;
     }
-    
-    public static void createFile(String path) {
-        try{
-            File f = new File(path);
-            f.createNewFile();
-        }
-        catch(IOException e){}
-    }
-    
 }
