@@ -12,8 +12,6 @@ import java.util.*;
 public class TrustedAuthorithy {
     
     Cpabe cpabe;
-    List<String> bsn = new LinkedList<String>();
-    List<String> insurances = new LinkedList<String>();
     
     public TrustedAuthorithy(){
         cpabe = new Cpabe();
@@ -26,21 +24,16 @@ public class TrustedAuthorithy {
         String list[] = new String[2];
         try{
             if(type.equalsIgnoreCase(":patient")) {
-                if(!bsn.contains(id)){
-                    bsn.add(id);
-                    list[0]=type; //write attributes
+                    list[0]=id; //write attributes
                     list[1]=id; //read attributes
                 }
-                else throw new IOException();
-                    
-            }
             else if(type.equalsIgnoreCase(":insurance")){
-                if(!insurances.contains(id)){
-                    insurances.add(id);
+                    list[0]=id; //write attributes
+                    list[1]=id; //read attributes
+            }
+            else if(type.equalsIgnoreCase(":employer")){
                     list[0]=type; //write attributes
                     list[1]=id; //read attributes
-                }
-                else throw new IOException();
             }
             else {
                 list[0]=type; //write attributes

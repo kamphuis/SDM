@@ -65,7 +65,6 @@ public class Client {
         try{
             String result_location = s.executeSelect(this,table,fields,bsn,clause);
             TA.cpabe.dec(pubk_location, pvtk_location, result_location, dec_location);
-            System.out.println("readed successfully");
         }
         catch(Exception e) {}        
     }

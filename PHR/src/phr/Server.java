@@ -81,16 +81,16 @@ public class Server implements Serializable{
         String result = "";
         try{
             FileReader fr_read = new FileReader(read_tree_location);
-            Scanner scan1 = new Scanner(fr_read);
+            Scanner scan = new Scanner(fr_read);
             boolean found = false;
-            while((scan1.hasNextLine())&&(!found)){
-                String f1 = scan1.nextLine();
-                String f2 = scan1.nextLine();
+            while((scan.hasNextLine())&&(!found)){
+                String f1 = scan.nextLine();
+                String f2 = scan.nextLine();
+                String f3 = scan.nextLine(); 
                 if((f1.equalsIgnoreCase(table))&&(f2.equalsIgnoreCase(key))){
-                    result=scan1.nextLine();
+                    result=f3;
                     found = true;
                 }
-                else scan1.nextLine();
             }    
             fr_read.close();
         }
@@ -107,11 +107,11 @@ public class Server implements Serializable{
             while((scan.hasNextLine())&&(!found)){
                 String f1 = scan.nextLine();
                 String f2 = scan.nextLine();
+                String f3 = scan.nextLine();
                 if((f1.equalsIgnoreCase(table))&&(f2.equalsIgnoreCase(key))){
-                    result=scan.nextLine();
+                    result=f3;
                     found = true;
                 }
-                else scan.nextLine();
             }    
             fr_read.close();
         }catch(Exception e){}
@@ -138,10 +138,20 @@ public class Server implements Serializable{
             System.out.println(query);
             ResultSet rs = stat.executeQuery(query);
             
-            while(rs.next()){
-                for(int i=1; i<=fields.size(); i++){
+            if(fields.get(0).equalsIgnoreCase("*")){
+                while(rs.next()){
+                    for(int i=1; i<=getSize(table); i++){
                     out.write(rs.getString(i));
                     out.newLine();
+                    }
+                }
+            }
+            else{
+                while(rs.next()){
+                    for(int i=1; i<=fields.size(); i++){
+                        out.write(rs.getString(i));
+                        out.newLine();
+                    }
                 }
             }
             
@@ -172,21 +182,25 @@ public class Server implements Serializable{
                     if(client.type.equalsIgnoreCase(":insurance")) {
                         addReadPolicy(table, id, ":"+id+" "+client.id+" 1of2"); 
                         addWritePolicy(table, id, client.id+" true 1of2");
+                        addReadPolicy("view_insurance", id, client.id+" :health-club 1of2");
+                        addReadPolicy("view_insurance_LT", id, client.id+" true 1of2");
                     }
                     if(client.type.equalsIgnoreCase(":patient")) {
                         addReadPolicy(table, id, ":"+id+" "+fields.get(1)+" 1of2"); 
                     }
+                    addReadPolicy("view_hospital", id,":hospital, :pharmacy");
                 }
         else if(table.equalsIgnoreCase("medical_history")) {
                     if(client.type.equalsIgnoreCase(":hospital")|| client.type.equalsIgnoreCase(":doctor")) {
-                        addReadPolicy(table, id, ":"+id+" :hospital :doctor 1of3"); //ISSUE
+                        addReadPolicy(table, id, ":"+id+" :hospital :doctor 1of3");
                         addWritePolicy(table, id, ":hospital :doctor 1of2");
                     }
                 }
         else if(table.equalsIgnoreCase("admittance")) {
                     if(client.type.equalsIgnoreCase(":hospital")|| client.type.equalsIgnoreCase(":doctor")) {
                         addReadPolicy(table, id, ":"+id+" :hospital :doctor 1of3");
-                        addWritePolicy(table, id, ":hospital :doctor :healtclub 1of3");
+                        addReadPolicy("view_employer", id,":employer true 1of2");
+                        addWritePolicy(table, id, ":hospital :doctor :health-club 1of3");
                     }
                 }
         else if(table.equalsIgnoreCase("long-term_treatment")) {
@@ -222,7 +236,6 @@ public class Server implements Serializable{
             System.out.println("Something broke"); 
         }
         if(match) {
-            System.out.println(client.type+" start writing");
             String values = "(";
             for(String item : fields) {
 		values = values.concat(item+", ");
@@ -267,5 +280,18 @@ public class Server implements Serializable{
             f.createNewFile();
         }
         catch(IOException e){}
+    }
+    
+    public int getSize(String table){
+        if(table.equalsIgnoreCase("patient_data")) return 11;
+        else if(table.equalsIgnoreCase("admittance")) return 5;
+        else if(table.equalsIgnoreCase("insurance")) return 7;
+        else if(table.equalsIgnoreCase("long-term_treatment")) return 5;
+        else if(table.equalsIgnoreCase("medical_history")) return 4;
+        else if(table.equalsIgnoreCase("view_employer")) return 3;
+        else if(table.equalsIgnoreCase("view_insurance")) return 5;
+        else if(table.equalsIgnoreCase("view_insurance_LT")) return 4;
+        else if(table.equalsIgnoreCase("view_hospital")) return 4;
+        else return 1;
     }
 }
