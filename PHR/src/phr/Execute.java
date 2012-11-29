@@ -4,8 +4,8 @@
  */
 package phr;
 
-import java.util.*;
 import java.io.*;
+import java.util.*;
 /**
  *
  * @author luca
@@ -33,7 +33,7 @@ public class Execute {
                 int sel = Integer.parseInt(bufRead.readLine());
                 String selection = "";
                 if(sel==1){
-                    List<String> l = new LinkedList<String>();
+                    List<String> l = new LinkedList<>();
                     System.out.print("insert your BSN (9 characters): ");
                     String bsn = bufRead.readLine();
                     l.add(bsn);
@@ -68,7 +68,7 @@ public class Execute {
                     patient1.write("patient_data", l, ser, bsn);
                 }
                 else if(sel==2) {
-                        List<String> l1 = new LinkedList<String>();
+                        List<String> l1 = new LinkedList<>();
                         System.out.println("insert doctor id: ");
                         String id = bufRead.readLine();
                         Client doctor = new Client(":doctor", ":"+id, "/home/luca/NetBeansProjects/test/clients/doctor", ser ,TA);
@@ -104,7 +104,7 @@ public class Execute {
                         doctor.read(table, l1, clause , ser, bsn);
                     }
                 else if(sel==3) {
-                        List<String> l1 = new LinkedList<String>();
+                        List<String> l1 = new LinkedList<>();
                         System.out.println("insert insurance id: ");
                         String id = bufRead.readLine();
                         Client insurance = new Client(":insurance", ":"+id, "/home/luca/NetBeansProjects/test/clients/insurance", ser ,TA);
@@ -128,7 +128,7 @@ public class Execute {
                         insurance.read(table, l1, clause , ser, bsn);
                  }
                 else if(sel==4) {
-                        List<String> l1 = new LinkedList<String>();
+                        List<String> l1 = new LinkedList<>();
                         System.out.println("insert employer id: ");
                         String id = bufRead.readLine();
                         Client employer = new Client(":employer", ":"+id, "/home/luca/NetBeansProjects/test/clients/employer", ser, TA);
@@ -155,8 +155,8 @@ public class Execute {
                     String id = bufRead.readLine();
                     Client hospital = new Client(":hospital", ":"+id, "/home/luca/NetBeansProjects/test/clients/hospital", ser ,TA);
                     selection = "";
-                    List<String> l01 = new LinkedList<String>();
-                    List<String> l02 = new LinkedList<String>();
+                    List<String> l01 = new LinkedList<>();
+                    List<String> l02 = new LinkedList<>();
                     System.out.print("insert patient BSN (9 characters): ");
                     String bsn = bufRead.readLine();
                     l01.add(bsn);
@@ -191,7 +191,7 @@ public class Execute {
                     String id = bufRead.readLine();
                     Client health_club = new Client(":health-club", ":"+id, "/home/luca/NetBeansProjects/test/clients/health_club", ser, TA);
                     selection="";
-                    List<String> l03 = new LinkedList<String>();
+                    List<String> l03 = new LinkedList<>();
                     System.out.print("insert patient BSN (9 characters): ");
                     String bsn = bufRead.readLine();
                     l03.add(bsn);
@@ -213,7 +213,9 @@ public class Execute {
                     }
                     health_club.write("admittance", l03, ser,bsn);
                 }
-                else choice=true;
+                else {
+                    choice=true;
+                }
             
             }
         }
